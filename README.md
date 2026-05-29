@@ -1,151 +1,140 @@
-# 🛒 Redis Cluster — Carrinho de Compras & Gestão de Sessões
-**Disciplina:** SGBD II | **Tema:** Arquitetura NoSQL para E-commerce de Alta Escala
+# 🛒 Carrinho de Compras & Gestão de Sessões — MongoDB
+
+**SGBD II — Trabalho Prático NoSQL**
+**Subdomínio:** Carrinho de Compras e Gestão de Sessões
+**SGBD:** MongoDB 7.0 (Replica Set — 3 nós)
 
 ---
 
-## 📐 Arquitetura
+## Pré-requisitos
 
-```
-┌─────────────────────────────────────────────────┐
-│              Redis Cluster (6 nós)              │
-│                                                  │
-│  Master 1 (:6379) ◄──► Replica 1 (:6382)       │
-│  Master 2 (:6380) ◄──► Replica 2 (:6383)       │
-│  Master 3 (:6381) ◄──► Replica 3 (:6384)       │
-│                                                  │
-│  16384 hash slots divididos pelos 3 masters     │
-└─────────────────────────────────────────────────┘
-         │
-         ▼
-  RedisInsight GUI (:5540)
-```
-
-- **3 Masters** — recebem escritas, cada um responsável por ~5461 hash slots
-- **3 Replicas** — leituras e failover automático se um master cair
-- **Política de memória:** `allkeys-lru` — expira chaves menos usadas quando memória enche
-- **Persistência:** AOF (Append-Only File) para durabilidade
+| Ferramenta | Versão mínima |
+|---|---|
+| Docker Desktop | 24+ |
+| Docker Compose | v2+ |
+| Python | 3.10+ |
+| pip | 23+ |
 
 ---
 
-## 🚀 Como levantar o ambiente
-
-### Pré-requisitos
-- Docker Desktop instalado e em execução
-- Docker Compose v2+
+## 1 — Levantar o Ambiente (Cluster MongoDB)
 
 ```bash
-# Verificar versões
-docker --version
-docker compose version
-```
+# Clonar o repositório
+git clone <URL_DO_REPO>
+cd <PASTA_DO_REPO>
 
-### Passo 1 — Clonar o repositório
-```bash
-git clone <URL_DO_REPOSITORIO>
-cd redis-cluster
-```
-
-### Passo 2 — Iniciar o cluster
-```bash
+# Iniciar os 3 nós MongoDB + Mongo Express
 docker compose up -d
+
+# Verificar que os containers estão em execução
+docker compose ps
 ```
 
-> O serviço `redis-cluster-init` executa automaticamente e cria o cluster.
-> Aguarde ~15 segundos após o `up` para o cluster estar totalmente inicializado.
+Aguardar ~15 segundos para o Replica Set ser iniciado automaticamente pelo serviço `mongo-init`.
 
-### Passo 3 — Verificar o estado do cluster
+**Verificar o estado do Replica Set:**
 ```bash
-# Ver logs da inicialização
-docker logs redis-cluster-init
-
-# Verificar info do cluster
-docker exec redis-master-1 redis-cli -p 6379 cluster info
-
-# Ver todos os nós
-docker exec redis-master-1 redis-cli -p 6379 cluster nodes
+docker exec -it mongo1 mongosh --eval "rs.status()"
 ```
 
-**Saída esperada em `cluster info`:**
-```
-cluster_enabled:1
-cluster_state:ok
-cluster_slots_assigned:16384
-cluster_known_nodes:6
-cluster_size:3
-```
-
-### Passo 4 — Aceder à GUI (RedisInsight)
-Abrir no browser: **http://localhost:5540**
-
-Adicionar conexão:
-- Host: `172.20.0.11`
-- Port: `6379`
+**Mongo Express (UI Web):** Abrir http://localhost:8081 no browser.
 
 ---
 
-## 📊 Importar os dados de teste
+## 2 — Instalar Dependências Python
 
 ```bash
-# Instalar dependências Python
-pip install redis faker tqdm
-
-# Executar script de seeding (gera 100.000+ registos)
-python scripts/seed_data.py
-
-# Verificar contagem de chaves inseridas
-docker exec redis-master-1 redis-cli -p 6379 dbsize
+pip install pymongo faker
 ```
 
 ---
 
-## 🔍 Executar as consultas
+## 3 — Executar o Script de Povoamento
+
+> Insere **330 000+ documentos** distribuídos por 5 coleções.
 
 ```bash
-# Executar todas as consultas demonstrativas
-python scripts/queries.py
+python seed_data.py
+```
 
-# Ou executar consulta específica
-python scripts/queries.py --query 1
+Saída esperada:
+```
+============================================================
+  SGBD NoSQL — Seed Script — E-commerce Sessions
+============================================================
+[1/5] Inserindo 10000 produtos...
+   ✓ 10000 produtos inseridos.
+[2/5] Inserindo 50000 utilizadores...
+   ✓ 50000 utilizadores inseridos.
+[3/5] Inserindo 100000 sessões/carrinhos...
+   ✓ 100000 sessões inseridas.
+[4/5] Inserindo 150000 eventos de carrinho...
+   ✓ 150000 eventos inseridos.
+[5/5] Inserindo 20000 registos de abandono...
+   ✓ 20000 registos inseridos.
+============================================================
+  Total de documentos inseridos: 330,000
+  Seed concluído com sucesso!
+============================================================
 ```
 
 ---
 
-## 🛑 Parar o ambiente
+## 4 — Executar as Queries Avançadas
 
 ```bash
-# Parar sem apagar dados
-docker compose stop
+python queries.py
+```
 
-# Parar e remover tudo (incluindo volumes)
-docker compose down -v
+As 7 queries executadas e os seus tempos de latência serão impressos no terminal.
+
+---
+
+## 5 — Estrutura do Repositório
+
+```
+.
+├── docker-compose.yml    # Cluster MongoDB 3 nós + Mongo Express
+├── seed_data.py          # Script de geração e inserção de dados
+├── queries.py            # 7 queries avançadas com medição de latência
+├── relatorio.pdf         # Relatório técnico completo
+└── README.md             # Este ficheiro
 ```
 
 ---
 
-## 🧪 Simular falha de nó (para o relatório)
+## 6 — Coleções e Volumes de Dados
 
-```bash
-# Parar um master para testar failover
-docker compose stop redis-master-1
+| Coleção | Documentos | Descrição |
+|---|---|---|
+| `sessions` | 100 000 | Carrinhos/Sessões (coleção principal) |
+| `users` | 50 000 | Perfis de utilizadores |
+| `products` | 10 000 | Catálogo de produtos |
+| `cart_events` | 150 000 | Log de eventos (add/remove/checkout) |
+| `abandoned_carts` | 20 000 | Carrinhos para remarketing |
 
-# Verificar que o cluster elegeu nova liderança
-docker exec redis-master-2 redis-cli -p 6380 cluster nodes
+---
 
-# Restaurar o nó
-docker compose start redis-master-1
+## 7 — String de Conexão
+
+```
+mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0
 ```
 
 ---
 
-## 📁 Estrutura do Repositório
+## 8 — Parar o Ambiente
 
+```bash
+docker compose down          # Para os containers (dados preservados)
+docker compose down -v       # Para e apaga os volumes de dados
 ```
-redis-cluster/
-├── docker-compose.yml       # Definição do cluster
-├── README.md                # Este ficheiro
-├── scripts/
-│   ├── seed_data.py         # Geração de 100k+ registos
-│   └── queries.py           # 5+ consultas avançadas
-└── docs/
-    └── relatorio.pdf        # Relatório técnico
-```
+
+---
+
+## Referências
+
+- MongoDB Documentation: https://www.mongodb.com/docs/
+- MongoDB Aggregation Pipeline: https://www.mongodb.com/docs/manual/aggregation/
+- Faker (Python): https://faker.readthedocs.io/

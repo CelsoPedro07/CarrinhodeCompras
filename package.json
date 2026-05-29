@@ -1,0 +1,24 @@
+{
+  "name": "carrinhodecompras",
+  "version": "1.0.0",
+  "description": "**SGBD II — Trabalho Prático NoSQL** **Subdomínio:** Carrinho de Compras e Gestão de Sessões **SGBD:** MongoDB 7.0 (Replica Set — 3 nós)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CelsoPedro07/CarrinhodeCompras.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CelsoPedro07/CarrinhodeCompras/issues"
+  },
+  "homepage": "https://github.com/CelsoPedro07/CarrinhodeCompras#readme",
+  "dependencies": {
+    "@faker-js/faker": "^10.4.0",
+    "mongodb": "^7.2.0"
+  }
+}
