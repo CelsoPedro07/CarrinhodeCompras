@@ -19,16 +19,7 @@ services:
   redis-master-1:
     image: redis:7.2-alpine
     container_name: redis-master-1
-    command: >
-      redis-server
-      --port 6379
-      --cluster-enabled yes
-      --cluster-config-file nodes.conf
-      --cluster-node-timeout 5000
-      --appendonly yes
-      --appendfilename appendonly.aof
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
     networks:
@@ -46,16 +37,7 @@ services:
   redis-master-2:
     image: redis:7.2-alpine
     container_name: redis-master-2
-    command: >
-      redis-server
-      --port 6380
-      --cluster-enabled yes
-      --cluster-config-file nodes.conf
-      --cluster-node-timeout 5000
-      --appendonly yes
-      --appendfilename appendonly.aof
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
+    command: redis-server --port 6380 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
       - "6380:6380"
     networks:
@@ -73,16 +55,7 @@ services:
   redis-master-3:
     image: redis:7.2-alpine
     container_name: redis-master-3
-    command: >
-      redis-server
-      --port 6381
-      --cluster-enabled yes
-      --cluster-config-file nodes.conf
-      --cluster-node-timeout 5000
-      --appendonly yes
-      --appendfilename appendonly.aof
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
+    command: redis-server --port 6381 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
       - "6381:6381"
     networks:
@@ -101,16 +74,7 @@ services:
   redis-replica-1:
     image: redis:7.2-alpine
     container_name: redis-replica-1
-    command: >
-      redis-server
-      --port 6382
-      --cluster-enabled yes
-      --cluster-config-file nodes.conf
-      --cluster-node-timeout 5000
-      --appendonly yes
-      --appendfilename appendonly.aof
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
+    command: redis-server --port 6382 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
       - "6382:6382"
     networks:
@@ -128,16 +92,7 @@ services:
   redis-replica-2:
     image: redis:7.2-alpine
     container_name: redis-replica-2
-    command: >
-      redis-server
-      --port 6383
-      --cluster-enabled yes
-      --cluster-config-file nodes.conf
-      --cluster-node-timeout 5000
-      --appendonly yes
-      --appendfilename appendonly.aof
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
+    command: redis-server --port 6383 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
       - "6383:6383"
     networks:
@@ -155,16 +110,7 @@ services:
   redis-replica-3:
     image: redis:7.2-alpine
     container_name: redis-replica-3
-    command: >
-      redis-server
-      --port 6384
-      --cluster-enabled yes
-      --cluster-config-file nodes.conf
-      --cluster-node-timeout 5000
-      --appendonly yes
-      --appendfilename appendonly.aof
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
+    command: redis-server --port 6384 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
       - "6384:6384"
     networks:
@@ -180,7 +126,6 @@ services:
       retries: 5
 
   # ── CLUSTER INITIALIZER ──────────────────────────────────
-  # Este serviço executa uma única vez para criar o cluster
   redis-cluster-init:
     image: redis:7.2-alpine
     container_name: redis-cluster-init
@@ -200,27 +145,13 @@ services:
         condition: service_healthy
       redis-replica-3:
         condition: service_healthy
-    command: >
-      sh -c "
-        echo '>>> Aguardando nós estarem prontos...' &&
-        sleep 3 &&
-        echo '>>> Inicializando Redis Cluster (3 masters + 3 replicas)...' &&
-        redis-cli --cluster create
-          172.20.0.11:6379
-          172.20.0.12:6380
-          172.20.0.13:6381
-          172.20.0.14:6382
-          172.20.0.15:6383
-          172.20.0.16:6384
-          --cluster-replicas 1
-          --cluster-yes &&
-        echo '>>> Cluster criado com sucesso!' &&
-        echo '>>> Verificando estado do cluster:' &&
-        redis-cli -h 172.20.0.11 -p 6379 cluster info
-      "
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo '>>> Aguardando nos estarem prontos...' && sleep 3 && echo '>>> Inicializando Redis Cluster (3 masters + 3 replicas)...' && redis-cli --cluster create 172.20.0.11:6379 172.20.0.12:6380 172.20.0.13:6381 172.20.0.14:6382 172.20.0.15:6383 172.20.0.16:6384 --cluster-replicas 1 --cluster-yes && echo '>>> Cluster criado com sucesso!' && redis-cli -h 172.20.0.11 -p 6379 cluster info
     restart: "no"
 
-  # ── REDIS INSIGHT (GUI opcional) ─────────────────────────
+  # ── REDIS INSIGHT (GUI) ──────────────────────────────────
   redis-insight:
     image: redis/redisinsight:latest
     container_name: redis-insight
