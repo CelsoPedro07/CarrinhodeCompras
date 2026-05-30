@@ -1,140 +1,113 @@
-# 🛒 Carrinho de Compras & Gestão de Sessões — MongoDB
+# Carrinho de Compras — Trabalho Prático SGBD II
 
-**SGBD II — Trabalho Prático NoSQL**
-**Subdomínio:** Carrinho de Compras e Gestão de Sessões
-**SGBD:** MongoDB 7.0 (Replica Set — 3 nós)
+Este repositório contém o ambiente Docker, scripts de povoamento e consultas para um projeto NoSQL com MongoDB.
 
----
+## Conteúdo do repositório
 
-## Pré-requisitos
+- `docker-compose.yml`: define o serviço MongoDB 7 e expõe a porta `27017`.
+- `mongo-init/init.js`: cria as coleções iniciais em `ecommerceDB` no primeiro arranque.
+- `seed/`: scripts de povoamento para `products`, `users`, `carts` e `sessions`.
+- `queries/queries.js`: scripts de consultas com `explain()` e medições de performance.
+- `analysis/08-performance-cap.md`: análise de desempenho, índices, CAP/PACELC e proposta de melhorias.
+- `RELATORIO_TECNICO.md`: relatório técnico detalhado do projeto.
 
-| Ferramenta | Versão mínima |
-|---|---|
-| Docker Desktop | 24+ |
-| Docker Compose | v2+ |
-| Python | 3.10+ |
-| pip | 23+ |
+## Requisitos
 
----
+- Docker Desktop ou Docker Engine instalado
+- Docker Compose disponível (`docker compose` ou `docker-compose`)
+- Node.js (recomendado 18.x ou superior)
+- Internet apenas para instalar dependências npm
 
-## 1 — Levantar o Ambiente (Cluster MongoDB)
+## Passo a passo
+
+1. Abra um terminal na pasta do repositório:
 
 ```bash
-# Clonar o repositório
-git clone <URL_DO_REPO>
-cd <PASTA_DO_REPO>
+cd c:\Users\Celso Pedro Mateus\Documents\CarrinhodeCompras
+```
 
-# Iniciar os 3 nós MongoDB + Mongo Express
+2. Instale as dependências Node.js:
+
+```bash
+npm install
+```
+
+3. Inicie o MongoDB com Docker Compose:
+
+```bash
 docker compose up -d
-
-# Verificar que os containers estão em execução
-docker compose ps
 ```
 
-Aguardar ~15 segundos para o Replica Set ser iniciado automaticamente pelo serviço `mongo-init`.
-
-**Verificar o estado do Replica Set:**
-```bash
-docker exec -it mongo1 mongosh --eval "rs.status()"
-```
-
-**Mongo Express (UI Web):** Abrir http://localhost:8081 no browser.
-
----
-
-## 2 — Instalar Dependências Python
+Se a sua instalação usar o comando legado, execute:
 
 ```bash
-pip install pymongo faker
+docker-compose up -d
 ```
 
----
+4. Verifique se o MongoDB está ativo na porta `27017`.
 
-## 3 — Executar o Script de Povoamento
-
-> Insere **330 000+ documentos** distribuídos por 5 coleções.
+5. Execute os scripts de povoamento na seguinte ordem:
 
 ```bash
-python seed_data.py
+node seed/productsSeeder.js
+node seed/usersSeeder.js
+node seed/cartsSeeder.js
+node seed/sessionsSeeder.js
 ```
 
-Saída esperada:
-```
-============================================================
-  SGBD NoSQL — Seed Script — E-commerce Sessions
-============================================================
-[1/5] Inserindo 10000 produtos...
-   ✓ 10000 produtos inseridos.
-[2/5] Inserindo 50000 utilizadores...
-   ✓ 50000 utilizadores inseridos.
-[3/5] Inserindo 100000 sessões/carrinhos...
-   ✓ 100000 sessões inseridas.
-[4/5] Inserindo 150000 eventos de carrinho...
-   ✓ 150000 eventos inseridos.
-[5/5] Inserindo 20000 registos de abandono...
-   ✓ 20000 registos inseridos.
-============================================================
-  Total de documentos inseridos: 330,000
-  Seed concluído com sucesso!
-============================================================
-```
+Isso irá gerar e inserir dados nas coleções:
+- `products` → 30.000 produtos
+- `users` → 50.000 utilizadores
+- `carts` → 15.000 carrinhos
+- `sessions` → 5.000 sessões
 
----
-
-## 4 — Executar as Queries Avançadas
+6. Execute as consultas e testes de performance:
 
 ```bash
-python queries.py
+node queries/queries.js
 ```
 
-As 7 queries executadas e os seus tempos de latência serão impressos no terminal.
+Este script cria índices e executa várias queries, incluindo:
+- busca de carrinho por utilizador
+- produtos filtrados e ordenados
+- agregações de produtos mais adicionados
+- operações de atualização em carrinho
+- consulta de carrinhos abandonados
+- sessões ativas
+- média de preços por categoria
+- top de carrinhos por valor total
 
----
+## Acesso ao MongoDB
 
-## 5 — Estrutura do Repositório
+As conexões usam as seguintes credenciais:
 
-```
-.
-├── docker-compose.yml    # Cluster MongoDB 3 nós + Mongo Express
-├── seed_data.py          # Script de geração e inserção de dados
-├── queries.py            # 7 queries avançadas com medição de latência
-├── relatorio.pdf         # Relatório técnico completo
-└── README.md             # Este ficheiro
-```
+- host: `localhost`
+- porta: `27017`
+- utilizador: `admin`
+- password: `admin123`
+- base de dados: `ecommerceDB`
 
----
+## Observações
 
-## 6 — Coleções e Volumes de Dados
+- O `docker-compose.yml` já inclui o volume `mongodb_data` para persistência entre execuções.
+- O script `mongo-init/init.js` cria as coleções automaticamente no primeiro arranque do container.
 
-| Coleção | Documentos | Descrição |
-|---|---|---|
-| `sessions` | 100 000 | Carrinhos/Sessões (coleção principal) |
-| `users` | 50 000 | Perfis de utilizadores |
-| `products` | 10 000 | Catálogo de produtos |
-| `cart_events` | 150 000 | Log de eventos (add/remove/checkout) |
-| `abandoned_carts` | 20 000 | Carrinhos para remarketing |
-
----
-
-## 7 — String de Conexão
-
-```
-mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0
-```
-
----
-
-## 8 — Parar o Ambiente
+## Como parar o ambiente
 
 ```bash
-docker compose down          # Para os containers (dados preservados)
-docker compose down -v       # Para e apaga os volumes de dados
+docker compose down
 ```
 
----
+ou
 
-## Referências
+```bash
+docker-compose down
+```
 
-- MongoDB Documentation: https://www.mongodb.com/docs/
-- MongoDB Aggregation Pipeline: https://www.mongodb.com/docs/manual/aggregation/
-- Faker (Python): https://faker.readthedocs.io/
+## Entrega
+
+Envie ao docente o link do repositório GitHub, incluindo:
+- Relatório técnico em PDF (`RELATORIO_TECNICO.pdf`)
+- Scripts de povoamento (`seed/*.js`)
+- Scripts de consultas (`queries/queries.js`)
+- `README.md` com instruções de reprodução
