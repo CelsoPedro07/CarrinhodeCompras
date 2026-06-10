@@ -29,4 +29,23 @@ async function runQueries() {
 }
 
 runQueries()
+    .then(() => {
+        // Notify backend via socket.io that queries finished
+        try {
+            const { io } = require('socket.io-client')
+            const socket = io('http://localhost:5000')
+
+            socket.on('connect', () => {
+                console.log('Connected to backend socket, notifying queries done')
+                socket.emit('queries:done')
+                socket.disconnect()
+            })
+
+            socket.on('connect_error', (err) => {
+                console.error('Socket connect error:', err)
+            })
+        } catch (err) {
+            console.error('Failed to notify backend via socket:', err)
+        }
+    })
 

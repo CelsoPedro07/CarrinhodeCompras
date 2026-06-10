@@ -49,6 +49,7 @@ export interface Session {
 export interface QueryMetric {
   id: string
   name: string
+  collection: string
   executionTime: number
   docsExamined: number
   keysExamined: number

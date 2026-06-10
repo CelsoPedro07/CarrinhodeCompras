@@ -165,14 +165,17 @@ async function executeSample(db, definition) {
   return cursor.toArray()
 }
 
-async function getQueryPerformance() {
+async function getQueryPerformance(collectionFilter = null) {
   await connectDB()
   const db = getDb()
   await ensureIndexes(db)
 
   const queries = []
+  const filteredDefinitions = collectionFilter
+    ? queryDefinitions.filter((definition) => definition.collection === collectionFilter)
+    : queryDefinitions
 
-  for (const definition of queryDefinitions) {
+  for (const definition of filteredDefinitions) {
     const actual = await runExplanation(db, definition, false)
     const baseline = definition.hintNatural ? await runExplanation(db, definition, true) : null
     const resultSample = await executeSample(db, definition)
@@ -186,6 +189,7 @@ async function getQueryPerformance() {
       objective: definition.objective,
       query: definition.query,
       indexName: definition.indexName,
+      collection: definition.collection,
       executionTime: actual.executionTime,
       docsExamined: actual.docsExamined,
       keysExamined: actual.keysExamined,

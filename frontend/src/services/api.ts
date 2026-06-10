@@ -70,7 +70,24 @@ export const checkHealth = async () => {
 }
 
 // GET Query metrics from backend query performance service
-export const getQueries = async () => {
-  const response = await api.get('/query-performance')
+export const getQueries = async (collection?: string) => {
+  const params = collection ? { collection } : undefined
+  const response = await api.get('/query-performance', { params })
   return response.data.data
+}
+
+// CRUD for products
+export const createProduct = async (payload: Partial<Product>) => {
+  const response = await api.post('/products', payload)
+  return response.data.data
+}
+
+export const updateProduct = async (id: string, payload: Partial<Product>) => {
+  const response = await api.put(`/products/${id}`, payload)
+  return response.data.data
+}
+
+export const deleteProduct = async (id: string) => {
+  const response = await api.delete(`/products/${id}`)
+  return response.data
 }

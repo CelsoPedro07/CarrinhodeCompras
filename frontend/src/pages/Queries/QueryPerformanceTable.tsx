@@ -12,6 +12,10 @@ export function QueryPerformanceTable({ metrics }: QueryPerformanceTableProps) {
     columnHelper.accessor('name', {
       header: 'Query',
     }),
+    columnHelper.accessor('collection', {
+      header: 'Coleção',
+      cell: (info) => info.getValue().toUpperCase(),
+    }),
     columnHelper.accessor('executionTime', {
       header: 'Latência (ms)',
     }),

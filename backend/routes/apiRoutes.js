@@ -8,6 +8,7 @@ const { getCarts, getCartStats } = require('../services/cartsService')
 const { getSessions, getSessionStats } = require('../services/sessionsService')
 const { getMetrics } = require('../services/metricsService')
 const { getQueryPerformance } = require('../services/queryPerformanceService')
+const { createProduct, updateProduct, deleteProduct } = require('../services/productsService')
 
 const router = express.Router()
 
@@ -103,11 +104,76 @@ router.get('/metrics', async (req, res) => {
 
 router.get('/query-performance', async (req, res) => {
   try {
-    const result = await getQueryPerformance()
+    const collection = req.query.collection ? String(req.query.collection).trim() : null
+    const result = await getQueryPerformance(collection)
     res.json(result)
   } catch (error) {
     console.error('Error fetching query performance:', error)
     res.status(500).json({ error: 'Failed to fetch query performance' })
+  }
+})
+
+router.post('/products', async (req, res) => {
+  try {
+    const payload = req.body
+    const result = await createProduct(payload)
+    const io = req.app.get('io')
+    if (io) {
+      const perf = await getQueryPerformance()
+      io.emit('query:performance', perf)
+    }
+    res.json(result)
+  } catch (error) {
+    console.error('Error creating product:', error)
+    res.status(500).json({ error: 'Failed to create product' })
+  }
+})
+
+router.put('/products/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const payload = req.body
+    const result = await updateProduct(id, payload)
+    const io = req.app.get('io')
+    if (io) {
+      const perf = await getQueryPerformance()
+      io.emit('query:performance', perf)
+    }
+    res.json(result)
+  } catch (error) {
+    console.error('Error updating product:', error)
+    res.status(500).json({ error: 'Failed to update product' })
+  }
+})
+
+router.delete('/products/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const result = await deleteProduct(id)
+    const io = req.app.get('io')
+    if (io) {
+      const perf = await getQueryPerformance()
+      io.emit('query:performance', perf)
+    }
+    res.json(result)
+  } catch (error) {
+    console.error('Error deleting product:', error)
+    res.status(500).json({ error: 'Failed to delete product' })
+  }
+})
+
+// Notify server that queries were executed externally (e.g., from queries/queries.js)
+router.post('/notify-query-run', async (req, res) => {
+  try {
+    const result = await getQueryPerformance()
+    const io = req.app.get('io')
+    if (io) {
+      io.emit('query:performance', result)
+    }
+    res.json({ ok: true })
+  } catch (error) {
+    console.error('Error notifying query run:', error)
+    res.status(500).json({ error: 'Failed to notify query run' })
   }
 })
 

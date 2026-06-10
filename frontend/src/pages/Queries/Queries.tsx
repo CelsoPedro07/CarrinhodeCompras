@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { SectionHeader } from '@/components/common/SectionHeader'
 import { PerformanceCards } from '@/pages/Queries/PerformanceCards'
@@ -8,7 +8,8 @@ import { useQueryMetrics } from '@/hooks/useQueryMetrics'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export function Queries() {
-  const queryMetricsQuery = useQueryMetrics()
+  const [collectionFilter, setCollectionFilter] = useState('all')
+  const queryMetricsQuery = useQueryMetrics(collectionFilter === 'all' ? undefined : collectionFilter)
   const metrics = queryMetricsQuery.data ?? []
 
   const totalQueries = useMemo(() => metrics.length, [metrics])
@@ -17,6 +18,27 @@ export function Queries() {
   return (
     <div className="space-y-6">
       <SectionHeader title="Performance" description="Analise o desempenho das consultas MongoDB e identifique impactos de índices." />
+
+      <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-950 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Filtrar por coleções</p>
+          <p className="text-lg font-semibold text-slate-950 dark:text-slate-100">Query especializada por coleção</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <label htmlFor="collectionFilter" className="text-sm font-medium text-slate-700 dark:text-slate-300">Coleção</label>
+          <select
+            id="collectionFilter"
+            value={collectionFilter}
+            onChange={(event) => setCollectionFilter(event.target.value)}
+            className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-sky-400 dark:focus:ring-sky-500/20"
+          >
+            <option value="all">Todas</option>
+            <option value="products">Produtos</option>
+            <option value="carts">Carrinhos</option>
+            <option value="sessions">Sessões</option>
+          </select>
+        </div>
+      </div>
 
       {queryMetricsQuery.isLoading ? (
         <div className="grid gap-4 md:grid-cols-3">

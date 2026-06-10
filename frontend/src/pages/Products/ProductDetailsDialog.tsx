@@ -1,13 +1,15 @@
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Product } from '@/types'
+import { Button } from '@/components/ui/button'
 
 interface ProductDetailsDialogProps {
   product: Product
   open: boolean
   onClose: () => void
+  onDelete?: (id: string) => void
 }
 
-export function ProductDetailsDialog({ product, open, onClose }: ProductDetailsDialogProps) {
+export function ProductDetailsDialog({ product, open, onClose, onDelete }: ProductDetailsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
@@ -19,6 +21,14 @@ export function ProductDetailsDialog({ product, open, onClose }: ProductDetailsD
           <p><strong>Preço:</strong> R$ {product.price.toFixed(2)}</p>
           <p><strong>Estoque:</strong> {product.stock}</p>
           <p><strong>Avaliação:</strong> {product.rating.toFixed(1)} ★</p>
+        </div>
+        <div className="mt-6 flex gap-2">
+          {onDelete ? (
+            <Button size="sm" variant="destructive" onClick={() => onDelete(product._id)}>
+              Deletar
+            </Button>
+          ) : null}
+          <Button size="sm" onClick={onClose}>Fechar</Button>
         </div>
       </DialogContent>
     </Dialog>
